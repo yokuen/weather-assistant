@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Assistant</title>
+    <meta name="description" content="Погодное веб-приложение" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-header">
+        <div class="page-header__logo">Weather Assistant</div>
+      </header>
+
+      <main class="page-main">
+        <section class="search-panel card">
+          <h1 class="search-panel__title">Найдите город</h1>
+
+          <div class="search-panel__form">
+            <input
+              class="search-panel__input"
+              type="text"
+              placeholder="Например, Екатеринбург"
+              disabled
+            />
+            <button class="search-panel__button" type="button" disabled>
+              Показать погоду
+            </button>
+          </div>
+        </section>
+
+        <section class="layout">
+          <div class="layout__main">
+            <section class="card section-card">
+              <h2 class="section-card__title">Погода сейчас</h2>
+              <div class="placeholder placeholder--large">
+                <p class="placeholder__title">Текущая погода</p>
+              </div>
+            </section>
+
+            <section class="card section-card">
+              <h2 class="section-card__title">Прогноз на 3 дня</h2>
+              <div class="forecast-grid">
+                <article class="placeholder">
+                  <p class="placeholder__title">День 1</p>
+                </article>
+                <article class="placeholder">
+                  <p class="placeholder__title">День 2</p>
+                </article>
+                <article class="placeholder">
+                  <p class="placeholder__title">День 3</p>
+                </article>
+              </div>
+            </section>
+          </div>
+
+          <aside class="layout__side">
+            <section class="card side-card">
+              <h2 class="section-card__title">Избранные города</h2>
+              <div class="placeholder">
+                <p class="placeholder__title">Избранное</p>
+              </div>
+            </section>
+
+            <section class="card side-card">
+              <h2 class="section-card__title">История поиска</h2>
+              <div class="placeholder">
+                <p class="placeholder__title">История</p>
+              </div>
+            </section>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <div id="app" hidden></div>
+  </body>
+</html>
