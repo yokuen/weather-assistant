@@ -76,15 +76,17 @@ input {
   box-shadow: var(--shadow);
 }
 
-.search-panel {
-  padding: 28px;
-  text-align: center;
+.search-panel__inner,
+.section-card,
+.side-card {
+  padding: 22px;
 }
 
 .search-panel__title {
   margin-bottom: 18px;
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.05;
+  text-align: center;
 }
 
 .search-panel__form {
@@ -128,11 +130,6 @@ input {
   gap: 18px;
 }
 
-.section-card,
-.side-card {
-  padding: 22px;
-}
-
 .section-card__title {
   margin-bottom: 16px;
   font-size: 1.8rem;
@@ -172,7 +169,7 @@ input {
     padding-top: 18px;
   }
 
-  .search-panel,
+  .search-panel__inner,
   .section-card,
   .side-card {
     padding: 18px;
