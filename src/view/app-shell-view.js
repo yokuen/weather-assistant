@@ -5,7 +5,7 @@ export default class AppShellView extends AbstractView {
     return `
       <div class="page">
         <header class="page-header">
-          <div class="page-header__logo">Weather Assistant</div>
+          <div class="page-header__logo">Погодный ассистент</div>
         </header>
 
         <main class="page-main">
