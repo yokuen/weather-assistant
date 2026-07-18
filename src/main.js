@@ -1,11 +1,8 @@
 import './styles/style.css';
 import { render } from './utils/render.js';
 import AppShellView from './view/app-shell-view.js';
-import SearchFormView from './view/search-form-view.js';
-import WeatherSectionView from './view/weather-section-view.js';
 import ForecastSectionView from './view/forecast-section-view.js';
 import SimpleSidebarView from './view/simple-sidebar-view.js';
-import WeatherCardView from './view/weather-card-view.js';
 import ForecastDayView from './view/forecast-day-view.js';
 import SidebarCityView from './view/sidebar-city-view.js';
 import WeatherModel from './model/weather-model.js';
@@ -13,6 +10,9 @@ import ForecastModel from './model/forecast-model.js';
 import FavoritesModel from './model/favorites-model.js';
 import HistoryModel from './model/history-model.js';
 import SettingsModel from './model/settings-model.js';
+import WeatherApiService from './service/weather-api-service.js';
+import WeatherPresenter from './presenter/weather-presenter.js';
+import { WEATHER_API_KEY, WEATHER_API_URL } from './const.js';
 
 const appElement = document.querySelector('#app');
 
@@ -22,17 +22,7 @@ if (appElement) {
   const favoritesModel = new FavoritesModel();
   const historyModel = new HistoryModel();
   const settingsModel = new SettingsModel();
-
-  weatherModel.setWeather({
-    city: 'Екатеринбург',
-    country: 'Россия',
-    description: 'Переменная облачность',
-    temperature: 21,
-    feelsLike: 23,
-    humidity: 68,
-    windSpeed: 14,
-    localTime: 'Четверг, 9 июля, 14:20',
-  });
+  const weatherService = new WeatherApiService(WEATHER_API_URL, WEATHER_API_KEY);
 
   forecastModel.setForecast([
     {
@@ -75,22 +65,20 @@ if (appElement) {
   const favoritesSectionElement = appShellView.element.querySelector('.favorites-section');
   const historySectionElement = appShellView.element.querySelector('.history-section');
 
-  render(new SearchFormView(), searchPanelElement);
+  const weatherPresenter = new WeatherPresenter({
+    searchContainer: searchPanelElement,
+    weatherContainer: weatherSectionElement,
+    weatherModel,
+    settingsModel,
+    weatherService,
+  });
 
-  const weatherSectionView = new WeatherSectionView();
-  render(weatherSectionView, weatherSectionElement);
-  render(
-    new WeatherCardView(weatherModel.weather, settingsModel.unit),
-    weatherSectionView.contentElement
-  );
+  weatherPresenter.init();
 
   const forecastSectionView = new ForecastSectionView();
   render(forecastSectionView, forecastSectionElement);
   forecastModel.forecast.forEach((forecastDay) => {
-    render(
-      new ForecastDayView(forecastDay, settingsModel.unit),
-      forecastSectionView.contentElement
-    );
+    render(new ForecastDayView(forecastDay), forecastSectionView.contentElement);
   });
 
   const favoritesView = new SimpleSidebarView('Избранные города');
