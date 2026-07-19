@@ -9,9 +9,9 @@ export default class SimpleMessageView extends AbstractView {
 
   get template() {
     return `
-      <article class="simple-message">
-        <h3 class="simple-message__title">${this._title}</h3>
-        <p class="simple-message__text">${this._text}</p>
+      <article class="sidebar-city">
+        <p class="sidebar-city__title">${this._title}</p>
+        <p class="sidebar-city__country">${this._text}</p>
       </article>
     `;
   }

@@ -1,22 +1,22 @@
-const isCurrentWeatherResponse = (responseData) => (
-  responseData?.location
-  && responseData?.current
-  && responseData.current.condition
-);
+const createCurrentWeather = (responseData) => ({
+  city: responseData.location.name,
+  country: responseData.location.country,
+  description: responseData.current.condition.text,
+  temperature: Math.round(responseData.current.temp_c),
+  feelsLike: Math.round(responseData.current.feelslike_c),
+  humidity: responseData.current.humidity,
+  windSpeed: Math.round(responseData.current.wind_kph),
+  localTime: responseData.location.localtime,
+});
 
-export const adaptCurrentWeather = (responseData) => {
-  if (!isCurrentWeatherResponse(responseData)) {
-    throw new Error('Weather API вернул неполные данные. Попробуйте позже.');
-  }
+const createForecastDay = (forecastDay) => ({
+  dayLabel: forecastDay.date,
+  condition: forecastDay.day.condition.text,
+  minTemperature: Math.round(forecastDay.day.mintemp_c),
+  maxTemperature: Math.round(forecastDay.day.maxtemp_c),
+});
 
-  return {
-    city: responseData.location.name,
-    country: responseData.location.country,
-    description: responseData.current.condition.text,
-    temperature: Math.round(responseData.current.temp_c),
-    feelsLike: Math.round(responseData.current.feelslike_c),
-    humidity: responseData.current.humidity,
-    windSpeed: Math.round(responseData.current.wind_kph),
-    localTime: responseData.location.localtime,
-  };
-};
+export const adaptForecastResponse = (responseData) => ({
+  currentWeather: createCurrentWeather(responseData),
+  forecast: responseData.forecast.forecastday.map(createForecastDay),
+});
