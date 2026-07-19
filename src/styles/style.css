@@ -55,6 +55,34 @@ input {
   border: 0;
 }
 
+.search-panel__button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.search-panel__input:focus-visible,
+.search-panel__button:focus-visible {
+  outline: 3px solid rgba(47, 128, 237, 0.3);
+  outline-offset: 2px;
+}
+
+.simple-message {
+  padding: 16px 18px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: #f7fbff;
+}
+
+.simple-message__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.simple-message__text {
+  margin-top: 6px;
+  color: var(--text-muted);
+}
+
 .page {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
@@ -136,17 +164,6 @@ input {
   cursor: pointer;
 }
 
-.search-panel__button:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.search-panel__input:focus-visible,
-.search-panel__button:focus-visible {
-  outline: 3px solid rgba(47, 128, 237, 0.3);
-  outline-offset: 2px;
-}
-
 .search-panel__status {
   margin-top: 14px;
   min-height: 24px;
@@ -226,8 +243,7 @@ input {
 
 .weather-card__stat,
 .forecast-day,
-.sidebar-city,
-.simple-message {
+.sidebar-city {
   padding: 16px 18px;
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
@@ -236,8 +252,7 @@ input {
 
 .weather-card__stat-value,
 .forecast-day__title,
-.sidebar-city__title,
-.simple-message__title {
+.sidebar-city__title {
   margin-top: 6px;
   font-size: 1.1rem;
   font-weight: 700;
@@ -252,9 +267,8 @@ input {
   font-size: 0.98rem;
 }
 
-.simple-message__text {
-  margin-top: 6px;
-  color: var(--text-muted);
+.forecast-day__label {
+  text-transform: capitalize;
 }
 
 .sidebar-list {

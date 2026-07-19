@@ -1,4 +1,4 @@
-import { adaptCurrentWeather } from '../adapter/weather-adapter.js';
+import { adaptForecastResponse } from '../adapter/weather-adapter.js';
 
 const API_ERROR_MESSAGES = {
   1006: 'Город не найден. Проверьте название и попробуйте еще раз.',
@@ -14,17 +14,27 @@ export default class WeatherApiService {
     this._apiKey = apiKey;
   }
 
-  async getCurrentWeather(city) {
+  async getWeatherWithForecast(city) {
+    const responseData = await this.#request('forecast.json', {
+      q: city,
+      days: 3,
+      aqi: 'no',
+      alerts: 'no',
+      lang: 'ru',
+    });
+
+    return adaptForecastResponse(responseData);
+  }
+
+  async #request(pathname, params) {
     if (!this._apiKey) {
       throw new Error('Добавьте API-ключ');
     }
 
-    const url = new URL(`${this._baseUrl}/current.json`);
+    const url = new URL(`${this._baseUrl}/${pathname}`);
     url.search = new URLSearchParams({
       key: this._apiKey,
-      q: city,
-      aqi: 'no',
-      lang: 'ru',
+      ...params,
     });
 
     let response;
@@ -35,7 +45,7 @@ export default class WeatherApiService {
       throw new Error('Не удалось подключиться к Weather API. Проверьте интернет-соединение.');
     }
 
-    let responseData = null;
+    let responseData;
 
     try {
       responseData = await response.json();
@@ -52,6 +62,6 @@ export default class WeatherApiService {
       throw new Error(message);
     }
 
-    return adaptCurrentWeather(responseData);
+    return responseData;
   }
 }
