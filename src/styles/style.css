@@ -207,6 +207,12 @@ input {
   align-items: start;
 }
 
+.weather-card__actions {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
 .weather-card__header {
   display: grid;
   gap: 8px;
@@ -245,6 +251,31 @@ input {
   background: #f8fbff;
   color: var(--text-main);
   cursor: pointer;
+}
+
+.weather-card__units {
+  display: inline-grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  background: #f7fbff;
+}
+
+.weather-card__unit-button {
+  min-width: 62px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.weather-card__unit-button.is-active {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+  color: #ffffff;
 }
 
 .weather-card__value {
@@ -292,6 +323,28 @@ input {
 .sidebar-list {
   display: grid;
   gap: 12px;
+}
+
+.advice-list {
+  display: grid;
+  gap: 12px;
+}
+
+.advice-item {
+  padding: 16px 18px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: #f7fbff;
+}
+
+.advice-item__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.advice-item__text {
+  margin-top: 8px;
+  color: var(--text-muted);
 }
 
 .favorite-city {
@@ -375,5 +428,9 @@ input {
   .history-card__header {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .weather-card__actions {
+    justify-items: stretch;
   }
 }

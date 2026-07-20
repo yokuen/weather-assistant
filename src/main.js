@@ -7,6 +7,8 @@ import SimpleMessageView from './view/simple-message-view.js';
 import SearchFormView from './view/search-form-view.js';
 import WeatherSectionView from './view/weather-section-view.js';
 import ForecastSectionView from './view/forecast-section-view.js';
+import AdviceSectionView from './view/advice-section-view.js';
+import AdviceItemView from './view/advice-item-view.js';
 import WeatherCardView from './view/weather-card-view.js';
 import ForecastDayView from './view/forecast-day-view.js';
 import FavoriteCityView from './view/favorite-city-view.js';
@@ -18,14 +20,17 @@ import FavoritesModel from './model/favorites-model.js';
 import HistoryModel from './model/history-model.js';
 import WeatherApiService from './service/weather-api-service.js';
 import { clearSection } from './utils/sections.js';
+import { getAdviceItems } from './utils/advice.js';
 import { loadState, saveState } from './utils/storage.js';
 import {
+  DEFAULT_UNIT,
   WEATHER_API_KEY,
   WEATHER_API_URL,
   EMPTY_FORECAST_TEXT,
   EMPTY_WEATHER_TEXT,
   FAVORITES_STORAGE_KEY,
   HISTORY_STORAGE_KEY,
+  SETTINGS_STORAGE_KEY,
 } from './const.js';
 
 const appElement = document.querySelector('#app');
@@ -36,7 +41,7 @@ if (appElement) {
 
   const weatherModel = new WeatherModel();
   const forecastModel = new ForecastModel();
-  const settingsModel = new SettingsModel();
+  const settingsModel = new SettingsModel(loadState(SETTINGS_STORAGE_KEY, DEFAULT_UNIT));
   const favoritesModel = new FavoritesModel(loadState(FAVORITES_STORAGE_KEY, []));
   const historyModel = new HistoryModel(loadState(HISTORY_STORAGE_KEY, []));
 
@@ -45,6 +50,7 @@ if (appElement) {
   const searchPanelElement = appShellView.element.querySelector('.search-panel');
   const weatherSectionElement = appShellView.element.querySelector('.weather-section');
   const forecastSectionElement = appShellView.element.querySelector('.forecast-section');
+  const adviceSectionElement = appShellView.element.querySelector('.advice-section');
   const favoritesSectionElement = appShellView.element.querySelector('.favorites-section');
   const historySectionElement = appShellView.element.querySelector('.history-section');
 
@@ -54,6 +60,10 @@ if (appElement) {
 
   const persistHistory = () => {
     saveState(HISTORY_STORAGE_KEY, historyModel.items);
+  };
+
+  const persistSettings = () => {
+    saveState(SETTINGS_STORAGE_KEY, settingsModel.unit);
   };
 
   const renderSearch = (message = '') => {
@@ -75,12 +85,13 @@ if (appElement) {
     }
 
     render(
-      new WeatherCardView(
-        weatherModel.weather,
-        settingsModel.unit,
-        favoritesModel.hasCity(weatherModel.weather.city),
-        handleFavoriteToggle
-      ),
+      new WeatherCardView({
+        weather: weatherModel.weather,
+        unit: settingsModel.unit,
+        isFavorite: favoritesModel.hasCity(weatherModel.weather.city),
+        onFavoriteToggle: handleFavoriteToggle,
+        onUnitChange: handleUnitChange,
+      }),
       weatherSectionView.contentElement
     );
   };
@@ -99,7 +110,29 @@ if (appElement) {
     }
 
     forecastModel.forecast.forEach((forecastDay) => {
-      render(new ForecastDayView(forecastDay), forecastSectionView.contentElement);
+      render(new ForecastDayView(forecastDay, settingsModel.unit), forecastSectionView.contentElement);
+    });
+  };
+
+  const renderAdvice = () => {
+    clearSection(adviceSectionElement);
+    const adviceSectionView = new AdviceSectionView();
+    render(adviceSectionView, adviceSectionElement);
+
+    if (!weatherModel.weather) {
+      render(
+        new SimpleMessageView(
+          'Советы появятся после поиска',
+          'Когда город будет найден, здесь появятся простые рекомендации на день.'
+        ),
+        adviceSectionView.contentElement
+      );
+      return;
+    }
+
+    const adviceItems = getAdviceItems(weatherModel.weather);
+    adviceItems.forEach((adviceItem) => {
+      render(new AdviceItemView(adviceItem), adviceSectionView.contentElement);
     });
   };
 
@@ -166,6 +199,7 @@ if (appElement) {
       renderSearch(`Найдено: ${currentWeather.city}, ${currentWeather.country}`);
       renderWeather();
       renderForecast();
+      renderAdvice();
       renderHistory();
     } catch (error) {
       weatherModel.setWeather(null);
@@ -173,6 +207,7 @@ if (appElement) {
       renderSearch(error.message);
       renderWeather();
       renderForecast();
+      renderAdvice();
     }
   };
 
@@ -214,9 +249,17 @@ if (appElement) {
     renderHistory();
   }
 
+  function handleUnitChange(unit) {
+    settingsModel.setUnit(unit);
+    persistSettings();
+    renderWeather();
+    renderForecast();
+  }
+
   renderSearch();
   renderWeather();
   renderForecast();
+  renderAdvice();
   renderFavorites();
   renderHistory();
 }
