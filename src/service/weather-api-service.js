@@ -32,11 +32,7 @@ export default class WeatherApiService {
     }
 
     const url = new URL(`${this._baseUrl}/${pathname}`);
-    url.search = new URLSearchParams({
-      key: this._apiKey,
-      ...params,
-    });
-
+    url.search = new URLSearchParams({ key: this._apiKey, ...params });
     let response;
 
     try {
@@ -58,7 +54,6 @@ export default class WeatherApiService {
       const message = API_ERROR_MESSAGES[apiErrorCode]
         ?? responseData?.error?.message
         ?? 'Не удалось получить данные. Попробуйте еще раз.';
-
       throw new Error(message);
     }
 

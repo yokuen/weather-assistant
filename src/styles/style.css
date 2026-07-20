@@ -200,6 +200,13 @@ input {
   gap: 18px;
 }
 
+.weather-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
 .weather-card__header {
   display: grid;
   gap: 8px;
@@ -227,6 +234,17 @@ input {
   display: flex;
   align-items: baseline;
   gap: 12px;
+}
+
+.weather-card__favorite,
+.favorite-city__remove,
+.history-card__clear {
+  padding: 10px 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  background: #f8fbff;
+  color: var(--text-main);
+  cursor: pointer;
 }
 
 .weather-card__value {
@@ -276,6 +294,58 @@ input {
   gap: 12px;
 }
 
+.favorite-city {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.favorite-city__open,
+.history-city {
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: #f7fbff;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+}
+
+.favorite-city__open {
+  display: grid;
+  gap: 6px;
+}
+
+.favorite-city__title,
+.history-city__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.favorite-city__country,
+.history-city__country {
+  color: var(--text-muted);
+}
+
+.history-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.history-card__header .section-card__title {
+  margin-bottom: 0;
+}
+
+.history-city {
+  display: grid;
+  gap: 6px;
+}
+
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
@@ -298,5 +368,12 @@ input {
   .forecast-grid,
   .weather-card__stats {
     grid-template-columns: 1fr;
+  }
+
+  .weather-card__top,
+  .favorite-city,
+  .history-card__header {
+    grid-template-columns: 1fr;
+    display: grid;
   }
 }

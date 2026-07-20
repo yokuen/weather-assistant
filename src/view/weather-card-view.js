@@ -7,10 +7,15 @@ const getTemperatureLabel = (unit, value) => {
 };
 
 export default class WeatherCardView extends AbstractView {
-  constructor(weather, unit) {
+  constructor(weather, unit, isFavorite, onFavoriteToggle) {
     super();
     this._weather = weather;
     this._unit = unit;
+    this._isFavorite = isFavorite;
+    this._onFavoriteToggle = onFavoriteToggle;
+
+    this.element.querySelector('.weather-card__favorite')
+      .addEventListener('click', this.#favoriteClickHandler);
   }
 
   get template() {
@@ -27,11 +32,17 @@ export default class WeatherCardView extends AbstractView {
 
     return `
       <article class="weather-card">
-        <div class="weather-card__header">
-          <h3 class="weather-card__city">${city}</h3>
-          <p class="weather-card__meta">${country}</p>
-          <p class="weather-card__description">${description}</p>
-          <p class="weather-card__time">${localTime}</p>
+        <div class="weather-card__top">
+          <div class="weather-card__header">
+            <h3 class="weather-card__city">${city}</h3>
+            <p class="weather-card__meta">${country}</p>
+            <p class="weather-card__description">${description}</p>
+            <p class="weather-card__time">${localTime}</p>
+          </div>
+
+          <button class="weather-card__favorite" type="button">
+            ${this._isFavorite ? 'Убрать из избранного' : 'В избранное'}
+          </button>
         </div>
 
         <div class="weather-card__temperature">
@@ -60,4 +71,8 @@ export default class WeatherCardView extends AbstractView {
       </article>
     `;
   }
+
+  #favoriteClickHandler = () => {
+    this._onFavoriteToggle(this._weather);
+  };
 }
