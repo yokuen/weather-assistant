@@ -1,21 +1,19 @@
 import AbstractView from './abstract-view.js';
-
-const getTemperatureLabel = (unit, value) => {
-  const suffix = unit === 'fahrenheit' ? '°F' : '°C';
-
-  return `${value}${suffix}`;
-};
+import { formatTemperature } from '../utils/temperature.js';
 
 export default class WeatherCardView extends AbstractView {
-  constructor(weather, unit, isFavorite, onFavoriteToggle) {
+  constructor({ weather, unit, isFavorite, onFavoriteToggle, onUnitChange }) {
     super();
     this._weather = weather;
     this._unit = unit;
     this._isFavorite = isFavorite;
     this._onFavoriteToggle = onFavoriteToggle;
+    this._onUnitChange = onUnitChange;
 
     this.element.querySelector('.weather-card__favorite')
       .addEventListener('click', this.#favoriteClickHandler);
+    this.element.querySelectorAll('.weather-card__unit-button')
+      .forEach((button) => button.addEventListener('click', this.#unitClickHandler));
   }
 
   get template() {
@@ -40,15 +38,34 @@ export default class WeatherCardView extends AbstractView {
             <p class="weather-card__time">${localTime}</p>
           </div>
 
-          <button class="weather-card__favorite" type="button">
-            ${this._isFavorite ? 'Убрать из избранного' : 'В избранное'}
-          </button>
+          <div class="weather-card__actions">
+            <button class="weather-card__favorite" type="button">
+              ${this._isFavorite ? 'Убрать из избранного' : 'В избранное'}
+            </button>
+
+            <div class="weather-card__units">
+              <button
+                class="weather-card__unit-button ${this._unit === 'celsius' ? 'is-active' : ''}"
+                type="button"
+                data-unit="celsius"
+              >
+                °C
+              </button>
+              <button
+                class="weather-card__unit-button ${this._unit === 'fahrenheit' ? 'is-active' : ''}"
+                type="button"
+                data-unit="fahrenheit"
+              >
+                °F
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="weather-card__temperature">
-          <span class="weather-card__value">${getTemperatureLabel(this._unit, temperature)}</span>
+          <span class="weather-card__value">${formatTemperature(temperature, this._unit)}</span>
           <span class="weather-card__feels-like">
-            Ощущается как ${getTemperatureLabel(this._unit, feelsLike)}
+            Ощущается как ${formatTemperature(feelsLike, this._unit)}
           </span>
         </div>
 
@@ -74,5 +91,9 @@ export default class WeatherCardView extends AbstractView {
 
   #favoriteClickHandler = () => {
     this._onFavoriteToggle(this._weather);
+  };
+
+  #unitClickHandler = (evt) => {
+    this._onUnitChange(evt.currentTarget.dataset.unit);
   };
 }

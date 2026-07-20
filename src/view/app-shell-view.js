@@ -15,6 +15,7 @@ export default class AppShellView extends AbstractView {
             <div class="layout__main">
               <section class="weather-section"></section>
               <section class="forecast-section"></section>
+              <section class="advice-section"></section>
             </div>
 
             <aside class="layout__side">

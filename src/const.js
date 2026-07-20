@@ -5,4 +5,5 @@ export const EMPTY_WEATHER_TEXT = 'После поиска здесь появи
 export const EMPTY_FORECAST_TEXT = 'Когда город будет найден, здесь появятся карточки прогноза на 3 дня.';
 export const FAVORITES_STORAGE_KEY = 'weather-assistant-favorites';
 export const HISTORY_STORAGE_KEY = 'weather-assistant-history';
+export const SETTINGS_STORAGE_KEY = 'weather-assistant-settings-unit';
 export const HISTORY_LIMIT = 5;
