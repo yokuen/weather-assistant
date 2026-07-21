@@ -15,8 +15,16 @@ export default class WeatherApiService {
   }
 
   async getWeatherWithForecast(city) {
+    return this.#loadForecast(city);
+  }
+
+  async getWeatherByCoordinates(latitude, longitude) {
+    return this.#loadForecast(`${latitude},${longitude}`);
+  }
+
+  async #loadForecast(query) {
     const responseData = await this.#request('forecast.json', {
-      q: city,
+      q: query,
       days: 3,
       aqi: 'no',
       alerts: 'no',

@@ -9,12 +9,15 @@ import WeatherSectionView from './view/weather-section-view.js';
 import ForecastSectionView from './view/forecast-section-view.js';
 import AdviceSectionView from './view/advice-section-view.js';
 import AdviceItemView from './view/advice-item-view.js';
+import HourlySectionView from './view/hourly-section-view.js';
+import HourlyItemView from './view/hourly-item-view.js';
 import WeatherCardView from './view/weather-card-view.js';
 import ForecastDayView from './view/forecast-day-view.js';
 import FavoriteCityView from './view/favorite-city-view.js';
 import HistoryCityView from './view/history-city-view.js';
 import WeatherModel from './model/weather-model.js';
 import ForecastModel from './model/forecast-model.js';
+import HourlyModel from './model/hourly-model.js';
 import SettingsModel from './model/settings-model.js';
 import FavoritesModel from './model/favorites-model.js';
 import HistoryModel from './model/history-model.js';
@@ -28,9 +31,11 @@ import {
   WEATHER_API_URL,
   EMPTY_FORECAST_TEXT,
   EMPTY_WEATHER_TEXT,
+  EMPTY_HOURLY_TEXT,
   FAVORITES_STORAGE_KEY,
   HISTORY_STORAGE_KEY,
   SETTINGS_STORAGE_KEY,
+  GEOLOCATION_ERROR_TEXT,
 } from './const.js';
 
 const appElement = document.querySelector('#app');
@@ -41,6 +46,7 @@ if (appElement) {
 
   const weatherModel = new WeatherModel();
   const forecastModel = new ForecastModel();
+  const hourlyModel = new HourlyModel();
   const settingsModel = new SettingsModel(loadState(SETTINGS_STORAGE_KEY, DEFAULT_UNIT));
   const favoritesModel = new FavoritesModel(loadState(FAVORITES_STORAGE_KEY, []));
   const historyModel = new HistoryModel(loadState(HISTORY_STORAGE_KEY, []));
@@ -49,6 +55,7 @@ if (appElement) {
 
   const searchPanelElement = appShellView.element.querySelector('.search-panel');
   const weatherSectionElement = appShellView.element.querySelector('.weather-section');
+  const hourlySectionElement = appShellView.element.querySelector('.hourly-section');
   const forecastSectionElement = appShellView.element.querySelector('.forecast-section');
   const adviceSectionElement = appShellView.element.querySelector('.advice-section');
   const favoritesSectionElement = appShellView.element.querySelector('.favorites-section');
@@ -68,7 +75,14 @@ if (appElement) {
 
   const renderSearch = (message = '') => {
     clearContainer(searchPanelElement);
-    render(new SearchFormView(handleSearchSubmit, message), searchPanelElement);
+    render(
+      new SearchFormView({
+        onSubmit: handleSearchSubmit,
+        onGeolocationClick: handleGeolocationClick,
+        message,
+      }),
+      searchPanelElement
+    );
   };
 
   const renderWeather = () => {
@@ -94,6 +108,24 @@ if (appElement) {
       }),
       weatherSectionView.contentElement
     );
+  };
+
+  const renderHourly = () => {
+    clearSection(hourlySectionElement);
+    const hourlySectionView = new HourlySectionView();
+    render(hourlySectionView, hourlySectionElement);
+
+    if (!hourlyModel.items.length) {
+      render(
+        new SimpleMessageView('Почасовой прогноз пока пуст', EMPTY_HOURLY_TEXT),
+        hourlySectionView.contentElement
+      );
+      return;
+    }
+
+    hourlyModel.items.forEach((hourItem) => {
+      render(new HourlyItemView(hourItem, settingsModel.unit), hourlySectionView.contentElement);
+    });
   };
 
   const renderForecast = () => {
@@ -181,33 +213,45 @@ if (appElement) {
     });
   };
 
-  const runSearch = async (cityName) => {
+  const applyResponseData = (responseData) => {
+    const { currentWeather, forecast, hourly } = responseData;
+
+    weatherModel.setWeather(currentWeather);
+    forecastModel.setForecast(forecast);
+    hourlyModel.setItems(hourly);
+    historyModel.addItem({
+      city: currentWeather.city,
+      country: currentWeather.country,
+    });
+    persistHistory();
+
+    renderSearch(`Найдено: ${currentWeather.city}, ${currentWeather.country}`);
+    renderWeather();
+    renderHourly();
+    renderForecast();
+    renderAdvice();
+    renderHistory();
+  };
+
+  const clearWeatherData = () => {
+    weatherModel.setWeather(null);
+    forecastModel.setForecast([]);
+    hourlyModel.setItems([]);
+    renderWeather();
+    renderHourly();
+    renderForecast();
+    renderAdvice();
+  };
+
+  const runSearch = async (query) => {
     renderSearch('Загрузка...');
 
     try {
-      const responseData = await weatherService.getWeatherWithForecast(cityName);
-      const { currentWeather, forecast } = responseData;
-
-      weatherModel.setWeather(currentWeather);
-      forecastModel.setForecast(forecast);
-      historyModel.addItem({
-        city: currentWeather.city,
-        country: currentWeather.country,
-      });
-      persistHistory();
-
-      renderSearch(`Найдено: ${currentWeather.city}, ${currentWeather.country}`);
-      renderWeather();
-      renderForecast();
-      renderAdvice();
-      renderHistory();
+      const responseData = await weatherService.getWeatherWithForecast(query);
+      applyResponseData(responseData);
     } catch (error) {
-      weatherModel.setWeather(null);
-      forecastModel.setForecast([]);
+      clearWeatherData();
       renderSearch(error.message);
-      renderWeather();
-      renderForecast();
-      renderAdvice();
     }
   };
 
@@ -253,11 +297,40 @@ if (appElement) {
     settingsModel.setUnit(unit);
     persistSettings();
     renderWeather();
+    renderHourly();
     renderForecast();
+  }
+
+  function handleGeolocationClick() {
+    if (!navigator.geolocation) {
+      renderSearch(GEOLOCATION_ERROR_TEXT);
+      return;
+    }
+
+    renderSearch('Определяем местоположение...');
+
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const responseData = await weatherService.getWeatherByCoordinates(
+            coords.latitude,
+            coords.longitude
+          );
+          applyResponseData(responseData);
+        } catch (error) {
+          clearWeatherData();
+          renderSearch(error.message);
+        }
+      },
+      () => {
+        renderSearch(GEOLOCATION_ERROR_TEXT);
+      }
+    );
   }
 
   renderSearch();
   renderWeather();
+  renderHourly();
   renderForecast();
   renderAdvice();
   renderFavorites();

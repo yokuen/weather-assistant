@@ -16,7 +16,15 @@ const createForecastDay = (forecastDay) => ({
   maxTemperature: Math.round(forecastDay.day.maxtemp_c),
 });
 
+const createHourlyItem = (hourItem) => ({
+  time: hourItem.time.split(' ')[1],
+  condition: hourItem.condition.text,
+  temperature: Math.round(hourItem.temp_c),
+  chanceOfRain: hourItem.chance_of_rain,
+});
+
 export const adaptForecastResponse = (responseData) => ({
   currentWeather: createCurrentWeather(responseData),
   forecast: responseData.forecast.forecastday.map(createForecastDay),
+  hourly: responseData.forecast.forecastday[0].hour.map(createHourlyItem).slice(0, 8),
 });
