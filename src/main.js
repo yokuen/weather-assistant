@@ -25,6 +25,8 @@ import WeatherApiService from './service/weather-api-service.js';
 import { clearSection } from './utils/sections.js';
 import { getAdviceItems } from './utils/advice.js';
 import { loadState, saveState } from './utils/storage.js';
+import { formatForecastDate } from './utils/date.js';
+import { isCountryOnlyQuery } from './utils/weather.js';
 import {
   DEFAULT_UNIT,
   WEATHER_API_KEY,
@@ -36,6 +38,8 @@ import {
   HISTORY_STORAGE_KEY,
   SETTINGS_STORAGE_KEY,
   GEOLOCATION_ERROR_TEXT,
+  SUGGESTIONS_LIMIT,
+  SUGGESTIONS_DELAY,
 } from './const.js';
 
 const appElement = document.querySelector('#app');
@@ -52,8 +56,12 @@ if (appElement) {
   const historyModel = new HistoryModel(loadState(HISTORY_STORAGE_KEY, []));
 
   const weatherService = new WeatherApiService(WEATHER_API_URL, WEATHER_API_KEY);
+  let suggestions = [];
+  let searchValue = '';
+  let suggestionsTimerId = null;
 
   const searchPanelElement = appShellView.element.querySelector('.search-panel');
+  const logoButtonElement = appShellView.element.querySelector('.page-header__logo');
   const weatherSectionElement = appShellView.element.querySelector('.weather-section');
   const hourlySectionElement = appShellView.element.querySelector('.hourly-section');
   const forecastSectionElement = appShellView.element.querySelector('.forecast-section');
@@ -73,24 +81,83 @@ if (appElement) {
     saveState(SETTINGS_STORAGE_KEY, settingsModel.unit);
   };
 
-  const renderSearch = (message = '') => {
+  const renderSearch = (message = '', shouldFocus = false) => {
     clearContainer(searchPanelElement);
     render(
       new SearchFormView({
         onSubmit: handleSearchSubmit,
         onGeolocationClick: handleGeolocationClick,
+        onInput: handleSearchInput,
+        onSuggestionClick: handleSuggestionClick,
         message,
+        suggestions,
+        value: searchValue,
       }),
       searchPanelElement
     );
+
+    if (shouldFocus) {
+      const inputElement = searchPanelElement.querySelector('.search-panel__input');
+      inputElement.focus();
+      inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
+    }
+  };
+
+  const getDisplayedWeather = () => {
+    const currentWeather = weatherModel.weather;
+    const selectedDay = forecastModel.selectedDay;
+    const currentDay = forecastModel.forecast[0];
+
+    if (!currentWeather || !selectedDay || selectedDay.dayLabel === currentDay?.dayLabel) {
+      return currentWeather;
+    }
+
+    return {
+      ...currentWeather,
+      description: selectedDay.condition,
+      conditionIcon: selectedDay.conditionIcon,
+      temperature: selectedDay.averageTemperature,
+      humidity: selectedDay.averageHumidity,
+      windSpeed: selectedDay.maxWind,
+      uv: selectedDay.uv,
+      chanceOfRain: selectedDay.chanceOfRain,
+      forecastDate: selectedDay.dayLabel,
+      minTemperature: selectedDay.minTemperature,
+      maxTemperature: selectedDay.maxTemperature,
+      sunrise: selectedDay.sunrise,
+      sunset: selectedDay.sunset,
+    };
+  };
+
+  const getHourlyItems = (forecastDay) => {
+    if (!forecastDay?.hours?.length) {
+      return [];
+    }
+
+    const isToday = forecastDay.dayLabel === forecastModel.forecast[0]?.dayLabel;
+
+    if (!isToday) {
+      return forecastDay.hours.filter((_, index) => index % 3 === 0).slice(0, 8);
+    }
+
+    const localHour = Number(weatherModel.weather?.localTime?.split(' ')[1]?.split(':')[0]);
+    const upcomingHours = Number.isFinite(localHour)
+      ? forecastDay.hours.filter((hourItem) => Number(hourItem.time.split(':')[0]) >= localHour)
+      : forecastDay.hours;
+
+    return (upcomingHours.length ? upcomingHours : forecastDay.hours).slice(0, 8);
   };
 
   const renderWeather = () => {
     clearSection(weatherSectionElement);
-    const weatherSectionView = new WeatherSectionView();
+    const displayedWeather = getDisplayedWeather();
+    const sectionTitle = displayedWeather?.forecastDate
+      ? `Прогноз на ${formatForecastDate(displayedWeather.forecastDate)}`
+      : 'Погода сейчас';
+    const weatherSectionView = new WeatherSectionView(sectionTitle);
     render(weatherSectionView, weatherSectionElement);
 
-    if (!weatherModel.weather) {
+    if (!displayedWeather) {
       render(
         new SimpleMessageView('Погода пока не выбрана', EMPTY_WEATHER_TEXT),
         weatherSectionView.contentElement
@@ -100,9 +167,9 @@ if (appElement) {
 
     render(
       new WeatherCardView({
-        weather: weatherModel.weather,
+        weather: displayedWeather,
         unit: settingsModel.unit,
-        isFavorite: favoritesModel.hasCity(weatherModel.weather.city),
+        isFavorite: favoritesModel.hasCity(displayedWeather.city),
         onFavoriteToggle: handleFavoriteToggle,
         onUnitChange: handleUnitChange,
       }),
@@ -112,7 +179,11 @@ if (appElement) {
 
   const renderHourly = () => {
     clearSection(hourlySectionElement);
-    const hourlySectionView = new HourlySectionView();
+    const isToday = !forecastModel.selectedDay
+      || forecastModel.selectedDay.dayLabel === forecastModel.forecast[0]?.dayLabel;
+    const hourlySectionView = new HourlySectionView(
+      isToday ? 'Ближайшие часы на сегодня' : 'Погода по часам для выбранного дня'
+    );
     render(hourlySectionView, hourlySectionElement);
 
     if (!hourlyModel.items.length) {
@@ -142,7 +213,15 @@ if (appElement) {
     }
 
     forecastModel.forecast.forEach((forecastDay) => {
-      render(new ForecastDayView(forecastDay, settingsModel.unit), forecastSectionView.contentElement);
+      render(
+        new ForecastDayView({
+          forecastDay,
+          unit: settingsModel.unit,
+          onDaySelect: handleDaySelect,
+          isActive: forecastModel.selectedDay?.dayLabel === forecastDay.dayLabel,
+        }),
+        forecastSectionView.contentElement
+      );
     });
   };
 
@@ -151,7 +230,9 @@ if (appElement) {
     const adviceSectionView = new AdviceSectionView();
     render(adviceSectionView, adviceSectionElement);
 
-    if (!weatherModel.weather) {
+    const displayedWeather = getDisplayedWeather();
+
+    if (!displayedWeather) {
       render(
         new SimpleMessageView(
           'Советы появятся после поиска',
@@ -162,8 +243,7 @@ if (appElement) {
       return;
     }
 
-    const adviceItems = getAdviceItems(weatherModel.weather);
-    adviceItems.forEach((adviceItem) => {
+    getAdviceItems(displayedWeather).forEach((adviceItem) => {
       render(new AdviceItemView(adviceItem), adviceSectionView.contentElement);
     });
   };
@@ -213,17 +293,23 @@ if (appElement) {
     });
   };
 
-  const applyResponseData = (responseData) => {
-    const { currentWeather, forecast, hourly } = responseData;
+  const applyResponseData = (responseData, selectedCityName = '') => {
+    const currentWeather = selectedCityName
+      ? { ...responseData.currentWeather, city: selectedCityName }
+      : responseData.currentWeather;
+    const { forecast } = responseData;
 
     weatherModel.setWeather(currentWeather);
     forecastModel.setForecast(forecast);
-    hourlyModel.setItems(hourly);
+    forecastModel.setSelectedDay(forecast[0] ?? null);
+    hourlyModel.setItems(getHourlyItems(forecast[0]));
     historyModel.addItem({
       city: currentWeather.city,
       country: currentWeather.country,
     });
     persistHistory();
+    suggestions = [];
+    searchValue = currentWeather.city;
 
     renderSearch(`Найдено: ${currentWeather.city}, ${currentWeather.country}`);
     renderWeather();
@@ -236,6 +322,7 @@ if (appElement) {
   const clearWeatherData = () => {
     weatherModel.setWeather(null);
     forecastModel.setForecast([]);
+    forecastModel.setSelectedDay(null);
     hourlyModel.setItems([]);
     renderWeather();
     renderHourly();
@@ -243,12 +330,22 @@ if (appElement) {
     renderAdvice();
   };
 
-  const runSearch = async (query) => {
+  const runSearch = async (query, selectedCityName = '') => {
+    searchValue = selectedCityName || query;
     renderSearch('Загрузка...');
 
     try {
       const responseData = await weatherService.getWeatherWithForecast(query);
-      applyResponseData(responseData);
+
+      if (isCountryOnlyQuery(query, responseData.currentWeather)) {
+        clearWeatherData();
+        renderSearch(
+          `Найдено название страны «${responseData.currentWeather.country}». Введите название города.`
+        );
+        return;
+      }
+
+      applyResponseData(responseData, selectedCityName);
     } catch (error) {
       clearWeatherData();
       renderSearch(error.message);
@@ -256,7 +353,9 @@ if (appElement) {
   };
 
   async function handleSearchSubmit(city) {
+    window.clearTimeout(suggestionsTimerId);
     const cityName = city.trim();
+    searchValue = cityName;
 
     if (!cityName) {
       renderSearch('Введите название города.');
@@ -267,7 +366,8 @@ if (appElement) {
   }
 
   async function handleRepeatSearch(city) {
-    await runSearch(city.city);
+    searchValue = city.city;
+    await runSearch(city.city, city.city);
   }
 
   function handleFavoriteToggle(weather) {
@@ -299,6 +399,7 @@ if (appElement) {
     renderWeather();
     renderHourly();
     renderForecast();
+    renderAdvice();
   }
 
   function handleGeolocationClick() {
@@ -327,6 +428,63 @@ if (appElement) {
       }
     );
   }
+
+  function handleDaySelect(forecastDay) {
+    forecastModel.setSelectedDay(forecastDay);
+    hourlyModel.setItems(getHourlyItems(forecastDay));
+    renderWeather();
+    renderHourly();
+    renderForecast();
+    renderAdvice();
+  }
+
+  function handleSearchInput(value) {
+    searchValue = value;
+    const query = value.trim();
+    window.clearTimeout(suggestionsTimerId);
+
+    if (query.length < 2) {
+      suggestions = [];
+      renderSearch('', true);
+      return;
+    }
+
+    suggestionsTimerId = window.setTimeout(async () => {
+      try {
+        const foundCities = await weatherService.searchCities(query);
+
+        if (searchValue.trim() !== query) {
+          return;
+        }
+
+        suggestions = foundCities.slice(0, SUGGESTIONS_LIMIT);
+        renderSearch('', true);
+      } catch {
+        if (searchValue.trim() !== query) {
+          return;
+        }
+
+        suggestions = [];
+        renderSearch('', true);
+      }
+    }, SUGGESTIONS_DELAY);
+  }
+
+  async function handleSuggestionClick(suggestion) {
+    window.clearTimeout(suggestionsTimerId);
+    searchValue = suggestion.name;
+    await runSearch(`${suggestion.latitude},${suggestion.longitude}`, suggestion.name);
+  }
+
+  function handleLogoClick() {
+    window.clearTimeout(suggestionsTimerId);
+    suggestions = [];
+    searchValue = '';
+    clearWeatherData();
+    renderSearch();
+  }
+
+  logoButtonElement.addEventListener('click', handleLogoClick);
 
   renderSearch();
   renderWeather();

@@ -12,11 +12,9 @@ export default class HistorySidebarView extends AbstractView {
   get template() {
     return `
       <section class="card side-card">
-        <div class="history-card__header">
-          <h2 class="section-card__title">История поиска</h2>
-          <button class="history-card__clear" type="button">Очистить</button>
-        </div>
+        <h2 class="section-card__title">История поиска</h2>
         <div class="sidebar-list"></div>
+        <button class="history-card__clear" type="button">Очистить</button>
       </section>
     `;
   }
