@@ -10,11 +10,15 @@ export default class HourlyItemView extends AbstractView {
 
   get template() {
     return `
-      <article class="hourly-item">
-        <p class="hourly-item__time">${this._hourItem.time}</p>
-        <p class="hourly-item__temp">${formatTemperature(this._hourItem.temperature, this._unit)}</p>
-        <p class="hourly-item__meta">${this._hourItem.condition}</p>
-        <p class="hourly-item__meta">Осадки: ${this._hourItem.chanceOfRain}%</p>
+      <article class="hourly-card">
+        <p class="hourly-card__time">${this._hourItem.time}</p>
+        <img
+          class="hourly-card__icon"
+          src="${this._hourItem.conditionIcon}"
+          alt="${this._hourItem.condition}"
+        />
+        <p class="hourly-card__temp">${formatTemperature(this._hourItem.temperature, this._unit)}</p>
+        <p class="hourly-card__meta">Осадки: ${this._hourItem.chanceOfRain}%</p>
       </article>
     `;
   }

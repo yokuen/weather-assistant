@@ -1,5 +1,6 @@
 import AbstractView from './abstract-view.js';
 import { formatTemperature } from '../utils/temperature.js';
+import { formatAstroTime, formatLocalTime } from '../utils/date.js';
 
 export default class WeatherCardView extends AbstractView {
   constructor({ weather, unit, isFavorite, onFavoriteToggle, onUnitChange }) {
@@ -21,12 +22,40 @@ export default class WeatherCardView extends AbstractView {
       city,
       country,
       description,
+      conditionIcon,
       temperature,
       feelsLike,
       humidity,
       windSpeed,
+      uv,
+      chanceOfRain,
       localTime,
+      forecastDate,
+      minTemperature,
+      maxTemperature,
+      sunrise,
+      sunset,
     } = this._weather;
+    const isForecast = Boolean(forecastDate);
+    const timeLabel = isForecast ? '' : `Локальное время: ${formatLocalTime(localTime)}`;
+    const temperatureLabel = isForecast
+      ? `От ${formatTemperature(minTemperature, this._unit)} до ${formatTemperature(maxTemperature, this._unit)}`
+      : `Ощущается как ${formatTemperature(feelsLike, this._unit)}`;
+    const lastStat = isForecast
+      ? `
+        <div class="weather-card__stat">
+          <p class="weather-card__stat-label">Световой день</p>
+          <p class="weather-card__stat-value">
+            ${formatAstroTime(sunrise)} — ${formatAstroTime(sunset)}
+          </p>
+        </div>
+      `
+      : `
+        <div class="weather-card__stat">
+          <p class="weather-card__stat-label">УФ-индекс</p>
+          <p class="weather-card__stat-value">${uv}</p>
+        </div>
+      `;
 
     return `
       <article class="weather-card">
@@ -35,7 +64,7 @@ export default class WeatherCardView extends AbstractView {
             <h3 class="weather-card__city">${city}</h3>
             <p class="weather-card__meta">${country}</p>
             <p class="weather-card__description">${description}</p>
-            <p class="weather-card__time">${localTime}</p>
+            ${timeLabel ? `<p class="weather-card__time">${timeLabel}</p>` : ''}
           </div>
 
           <div class="weather-card__actions">
@@ -63,10 +92,13 @@ export default class WeatherCardView extends AbstractView {
         </div>
 
         <div class="weather-card__temperature">
+          <img
+            class="weather-card__icon"
+            src="${conditionIcon}"
+            alt="${description}"
+          >
           <span class="weather-card__value">${formatTemperature(temperature, this._unit)}</span>
-          <span class="weather-card__feels-like">
-            Ощущается как ${formatTemperature(feelsLike, this._unit)}
-          </span>
+          <span class="weather-card__feels-like">${temperatureLabel}</span>
         </div>
 
         <div class="weather-card__stats">
@@ -81,9 +113,11 @@ export default class WeatherCardView extends AbstractView {
           </div>
 
           <div class="weather-card__stat">
-            <p class="weather-card__stat-label">Единицы</p>
-            <p class="weather-card__stat-value">${this._unit === 'fahrenheit' ? '°F' : '°C'}</p>
+            <p class="weather-card__stat-label">Осадки</p>
+            <p class="weather-card__stat-value">${chanceOfRain}%</p>
           </div>
+
+          ${lastStat}
         </div>
       </article>
     `;

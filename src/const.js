@@ -9,3 +9,5 @@ export const HISTORY_STORAGE_KEY = 'weather-assistant-history';
 export const SETTINGS_STORAGE_KEY = 'weather-assistant-settings-unit';
 export const HISTORY_LIMIT = 5;
 export const GEOLOCATION_ERROR_TEXT = 'Не удалось определить местоположение. Разрешите доступ к геолокации.';
+export const SUGGESTIONS_LIMIT = 5;
+export const SUGGESTIONS_DELAY = 280;

@@ -1,4 +1,4 @@
-import { adaptForecastResponse } from '../adapter/weather-adapter.js';
+import { adaptForecastResponse, adaptSearchResponse } from '../adapter/weather-adapter.js';
 
 const API_ERROR_MESSAGES = {
   1006: 'Город не найден. Проверьте название и попробуйте еще раз.',
@@ -20,6 +20,15 @@ export default class WeatherApiService {
 
   async getWeatherByCoordinates(latitude, longitude) {
     return this.#loadForecast(`${latitude},${longitude}`);
+  }
+
+  async searchCities(query) {
+    const responseData = await this.#request('search.json', {
+      q: query,
+      lang: 'ru',
+    });
+
+    return adaptSearchResponse(responseData);
   }
 
   async #loadForecast(query) {
